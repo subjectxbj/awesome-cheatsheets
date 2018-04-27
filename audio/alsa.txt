@@ -1,0 +1,87 @@
+##############################################################################
+# ALSA CHEATSHEET  -  by subjectxbj (created on 2018/04/27)
+# Version: 1, Last Modified: 2018/04/27 11:30
+# https://github.com/subjectxbj/awesome-cheatsheets
+##############################################################################
+
+##############################################################################
+# aplay 
+##############################################################################
+
+aplay -Dplughw:0,0 test.wav	# play an audio file on a sink device
+
+##############################################################################
+# arecord 
+##############################################################################
+
+# record sound from a sound device and store on a wav file
+arecord -Dplughw:0,0 -f S16_LE -r 16000 -c 1 test.wav
+
+
+##############################################################################
+# gstreamer 
+##############################################################################
+
+# Play a sin wave to the alsa sink device
+gst-launch-1.0 -vvv audiotestsrc ! alsasink device="hw:0,0"
+	
+From <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=599462> 
+
+# Play a wav audio file to the alsa sound card
+gst-launch-1.0 filesrc location=music.wav ! wavparse ! audioconvert ! audioresample ! alsasink
+
+# Adjust the volume when playing an audio
+gst-launch-1.0 filesrc location=mp3/fly.mp3 ! decodebin ! audioconvert ! volume volume=1.0 ! alsasink
+
+# Specify the output sample rate
+gst-launch-1.0 -v uridecodebin uri=file:///path/to/audio.ogg ! audioconvert ! audioresample ! audio/x-raw, rate=8000 ! autoaudiosink
+
+Gst-launch-1.0 -v -m -t filesrc location=med_system_alerts_melodic_01_short._TTH_.wav ! wavparse !  Audioconvert ! audioresample ! audio/x-raw, rate=16000, channels=1
+
+From <http://gstreamer-devel.966125.n4.nabble.com/Unable-to-put-caps-on-audioconvert-amp-audioresample-td4676180.html> 
+
+
+##############################################################################
+# Audio config for /etc/asound.conf 
+##############################################################################
+pcm.!default {
+  type asym
+   playback.pcm {
+     type plug
+     slave.pcm "hw:1,0"
+   }
+   capture.pcm {
+     type plug
+     slave.pcm "hw:1,0"
+   }
+}
+
+# define the dmixer
+pcm.!default {
+   type asym
+   playback.pcm{
+     type plug
+     slave.pcm "dmixer"
+   }
+   capture.pcm {
+     type plug
+     slave.pcm "hw:1,0"
+   }
+}
+
+pcm.dmixer  {
+    type dmix
+    ipc_key 1024
+    slave {
+        pcm "hw:1,0"
+        period_time 0
+        period_size 1024
+        buffer_size 4096
+        rate 16000
+    }
+    bindings {
+        0 0
+        1 1
+    }
+}
+
